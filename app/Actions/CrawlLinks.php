@@ -3,7 +3,7 @@
 namespace App\Actions;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
+use App\Actions\FetchHtml;
 use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -106,18 +106,11 @@ class CrawlLinks
 
         $this->visited[$url] = true;
 
-        try {
-            $response = Http::timeout(10)->get($url);
+        $html = FetchHtml::make()->handle($url);
 
-            if ($response->failed()) {
-                return [];
-            }
-        } catch (\Throwable $e) {
-            // Skip URLs that cannot be fetched.
+        if ($html === null) {
             return [];
         }
-
-        $html = $response->body();
 
         // Extract links using a simple regex.
         // Note: For a production-ready crawler, consider using a proper HTML parser instead.
