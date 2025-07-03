@@ -2,6 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Actions\ChunkMarkdown;
+use App\Actions\CrawlAi;
+
+Route::get('/test', function () {
+    $response = CrawlAi::make()->handle('https://shreycation.substack.com/');
+    $markdown = $response->rawMarkdown();
+    $chunks = ChunkMarkdown::make()->handle($markdown);
+    dd($chunks);
+});
 
 Route::get('/', function () {
     return Inertia::render('welcome');
