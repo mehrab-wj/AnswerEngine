@@ -106,19 +106,15 @@ class CrawlLinks
 
         $this->visited[$url] = true;
 
-        $html = FetchHtml::make()->handle($url);
+        $crawlAi = CrawlAi::make()->handle(url: $url);
 
-        if ($html === null) {
+        if (!$crawlAi->success()) {
             return [];
         }
+        
+        $links = collect($crawlAi->internalLinks())->pluck('href')->toArray();
 
-        // Extract links using a simple regex.
-        // Note: For a production-ready crawler, consider using a proper HTML parser instead.
-        preg_match_all('/<a\s+[^>]*href=["\\\']([^"\\\']+)["\\\']/i', $html, $matches);
-
-        $found = [];
-
-        foreach ($matches[1] as $link) {
+        foreach ($links as $link) {
             // Resolve relative links.
             if (Str::startsWith($link, '/')) {
                 $link = rtrim($url, '/') . $link;
@@ -133,6 +129,10 @@ class CrawlLinks
 
             if (! Str::startsWith($link, ['http://', 'https://'])) {
                 // Skip non-HTTP links (mailto:, tel:, etc.).
+                continue;
+            }
+
+            if (Str::endsWith($link, ['.txt', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'])) {
                 continue;
             }
 
@@ -173,8 +173,13 @@ class CrawlLinks
      */
     protected function stripFragment(string $url): string
     {
+        // First, remove any fragment (everything after "#").
         $hashPos = strpos($url, '#');
+        $url = $hashPos === false ? $url : substr($url, 0, $hashPos);
 
-        return $hashPos === false ? $url : substr($url, 0, $hashPos);
+        // Then, remove any query string (everything after "?").
+        $queryPos = strpos($url, '?');
+
+        return $queryPos === false ? $url : substr($url, 0, $queryPos);
     }
 } 
