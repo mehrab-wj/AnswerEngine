@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -9,6 +10,9 @@ use Lorisleiva\Actions\Concerns\AsAction;
 class CrawlAi
 {
     use AsAction;
+
+    public string $commandSignature = "crawl {url} {accessor=markdown} {--stream : Whether to request streaming (defaults to false for simpler parsing)} {--cache-days=1 : Number of days to cache the result}";
+    public string $commandDescription = "Crawl a URL using crawl4ai and return the specified accessor result.";
 
     /**
      * Base endpoint for the crawl4ai API (without trailing slash).
@@ -51,8 +55,17 @@ class CrawlAi
                         'type'   => 'WebScrapingStrategy',
                         'params' => new \stdClass(),
                     ],
+                    'exclude_all_images' => true,
                     'exclude_social_media_domains' => [
-                        'facebook.com', 'twitter.com', 'x.com', 'linkedin.com', 'instagram.com', 'pinterest.com', 'tiktok.com', 'snapchat.com', 'reddit.com',
+                        'facebook.com',
+                        'twitter.com',
+                        'x.com',
+                        'linkedin.com',
+                        'instagram.com',
+                        'pinterest.com',
+                        'tiktok.com',
+                        'snapchat.com',
+                        'reddit.com',
                     ],
                     'stream' => $stream,
                 ],
@@ -79,10 +92,36 @@ class CrawlAi
             }
         } catch (\Throwable $e) {
             // Silent failure: return null so caller can decide what to do.
+            echo PHP_EOL . $e->getMessage() . PHP_EOL;
         }
 
         // On failure we still return the instance; accessors will return null / false accordingly.
         return $this;
+    }
+
+    public function asCommand(Command $command): void
+    {
+        $command->info("Crawling {$command->argument('url')}");
+        $this->handle($command->argument('url'), $command->option('stream'), $command->option('cache-days'));
+
+        if (!$this->success()) {
+            $command->error("Failed to crawl {$command->argument('url')}");
+            return;
+        }
+
+        switch ($command->argument('accessor')) {
+            case 'markdown':
+                $command->line($this->rawMarkdown());
+                break;
+            case 'html':
+                $command->line($this->html());
+                break;
+            case 'cleaned_html':
+                $command->line($this->cleanedHtml());
+                break;
+            default:
+                $command->info("Supported accessors: markdown, html, cleaned_html");
+        }
     }
 
     /**
@@ -132,4 +171,4 @@ class CrawlAi
     {
         return $this->result['links']['external'] ?? [];
     }
-} 
+}
