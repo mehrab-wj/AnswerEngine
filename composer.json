@@ -14,6 +14,7 @@
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "lorisleiva/laravel-actions": "^2.9",
+        "openai-php/client": "*",
         "tightenco/ziggy": "^2.4"
     },
     "require-dev": {
