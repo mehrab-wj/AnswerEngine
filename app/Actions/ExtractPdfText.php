@@ -24,7 +24,7 @@ class ExtractPdfText
      * @return array Result containing text, metadata, and processing info
      * @throws PdfExtractionException
      */
-    public function handle(string $filePath, ?string $driver = null, bool $convertToMarkdown = false): array
+    public function handle(string $filePath, ?string $driver = null, bool $convertToMarkdown = true): array
     {
         // Create the PDF text extractor
         $extractor = new PdfTextExtractor($driver);
