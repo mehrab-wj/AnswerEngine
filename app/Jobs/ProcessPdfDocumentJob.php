@@ -115,7 +115,8 @@ class ProcessPdfDocumentJob implements ShouldQueue
                 'pages' => $result['metadata']['pages'] ?? 0,
             ]);
 
-            // Dispatch vector processing job
+            // Set vector sync status to pending and dispatch vector processing job
+            $this->pdfDocument->update(['vector_sync_status' => 'pending']);
             SyncPdfToVectorDbJob::dispatch($this->pdfDocument->id, $this->pdfDocument->user_id);
 
         } catch (PdfExtractionException $e) {

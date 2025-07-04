@@ -43,10 +43,14 @@ class SyncPdfToVectorDbJob implements ShouldQueue
 
         if (empty($pdfDocument->markdown_text)) {
             Log::warning("No markdown content for PdfDocument {$this->pdfDocumentId}");
+            $pdfDocument->markVectorSyncAsFailed('No markdown content available');
             return;
         }
 
         try {
+            // Mark vector sync as processing
+            $pdfDocument->markVectorSyncAsProcessing();
+
             // Initialize services
             $embedding = OpenAIEmbedding::make();
             $vectorDb = VectorDatabase::make();
@@ -59,14 +63,19 @@ class SyncPdfToVectorDbJob implements ShouldQueue
             
             if (empty($chunks)) {
                 Log::warning("No chunks generated for PdfDocument {$this->pdfDocumentId}");
+                $pdfDocument->markVectorSyncAsFailed('No chunks generated from markdown content');
                 return;
             }
 
             // Process chunks in batches
             $this->processChunksInBatches($chunks, $pdfDocument, $embedding, $vectorDb);
 
+            // Mark vector sync as completed
+            $pdfDocument->markVectorSyncAsCompleted();
+
         } catch (\Exception $e) {
             Log::error("SyncPdfToVectorDbJob failed for PdfDocument {$this->pdfDocumentId}: " . $e->getMessage());
+            $pdfDocument->markVectorSyncAsFailed($e->getMessage());
             throw $e;
         }
     }
@@ -182,5 +191,10 @@ class SyncPdfToVectorDbJob implements ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Log::error("SyncPdfToVectorDbJob failed for PdfDocument {$this->pdfDocumentId}: " . $exception->getMessage());
+        
+        $pdfDocument = PdfDocument::find($this->pdfDocumentId);
+        if ($pdfDocument) {
+            $pdfDocument->markVectorSyncAsFailed($exception->getMessage());
+        }
     }
 } 

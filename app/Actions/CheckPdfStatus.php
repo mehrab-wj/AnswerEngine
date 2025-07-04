@@ -35,6 +35,7 @@ class CheckPdfStatus
             'found' => true,
             'uuid' => $pdfDocument->uuid,
             'status' => $pdfDocument->status,
+            'vector_sync_status' => $pdfDocument->vector_sync_status,
             'filename' => $pdfDocument->original_filename,
             'file_size' => $pdfDocument->file_size,
             'formatted_file_size' => $pdfDocument->formatted_file_size,
@@ -76,6 +77,7 @@ class CheckPdfStatus
             [
                 ['UUID', $result['uuid']],
                 ['Status', $this->getStatusWithIcon($result['status'])],
+                ['Vector Sync Status', $this->getVectorSyncStatusWithIcon($result['vector_sync_status'])],
                 ['Filename', $result['filename']],
                 ['File Size', $result['formatted_file_size']],
                 ['User ID', $result['user_id']],
@@ -129,6 +131,20 @@ class CheckPdfStatus
         return match ($status) {
             'pending' => '⏳ Pending',
             'processing' => '⚙️ Processing',
+            'completed' => '✅ Completed',
+            'failed' => '❌ Failed',
+            default => $status,
+        };
+    }
+
+    /**
+     * Get vector sync status with icon for better visual representation.
+     */
+    protected function getVectorSyncStatusWithIcon(string $status): string
+    {
+        return match ($status) {
+            'pending' => '⏳ Pending',
+            'processing' => '🔄 Processing',
             'completed' => '✅ Completed',
             'failed' => '❌ Failed',
             default => $status,

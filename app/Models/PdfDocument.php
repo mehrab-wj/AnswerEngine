@@ -25,6 +25,7 @@ class PdfDocument extends Model
         'storage_path',
         'file_size',
         'status',
+        'vector_sync_status',
         'extracted_text',
         'markdown_text',
         'metadata',
@@ -302,5 +303,64 @@ class PdfDocument extends Model
             'filename' => $this->original_filename,
             'user_id' => (string) $this->user_id,
         ];
+    }
+
+    /**
+     * Mark vector sync as processing.
+     */
+    public function markVectorSyncAsProcessing(): void
+    {
+        $this->update(['vector_sync_status' => 'processing']);
+    }
+
+    /**
+     * Mark vector sync as completed.
+     */
+    public function markVectorSyncAsCompleted(): void
+    {
+        $this->update(['vector_sync_status' => 'completed']);
+    }
+
+    /**
+     * Mark vector sync as failed.
+     */
+    public function markVectorSyncAsFailed(string $error): void
+    {
+        $this->update([
+            'vector_sync_status' => 'failed',
+            'error_message' => $error,
+        ]);
+    }
+
+    /**
+     * Check if vector sync is pending.
+     */
+    public function isVectorSyncPending(): bool
+    {
+        return $this->vector_sync_status === 'pending';
+    }
+
+    /**
+     * Check if vector sync is processing.
+     */
+    public function isVectorSyncProcessing(): bool
+    {
+        return $this->vector_sync_status === 'processing';
+    }
+
+    /**
+     * Check if vector sync is completed.
+     */
+    public function isVectorSyncCompleted(): bool
+    {
+        return $this->vector_sync_status === 'completed';
+    }
+
+    /**
+     * Check if vector sync has failed.
+     */
+    public function hasVectorSyncFailed(): bool
+    {
+        return $this->vector_sync_status === 'failed';
     }
 } 
