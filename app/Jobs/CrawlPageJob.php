@@ -42,13 +42,11 @@ class CrawlPageJob implements ShouldQueue
         $scrapeProcess = ScrapeProcess::find($this->scrapeProcessId);
         
         if (!$scrapeProcess) {
-            Log::error("ScrapeProcess not found: {$this->scrapeProcessId}");
             return;
         }
 
         // Check if URL was already processed
         if ($this->isUrlProcessed($this->url)) {
-            Log::info("URL already processed: {$this->url}");
             return;
         }
 
