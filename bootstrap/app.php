@@ -6,6 +6,10 @@ use App\Actions\CrawlLinks;
 use App\Actions\CrawlAi;
 use App\Actions\CrawlWebsite;
 use App\Actions\ExtractPdfText;
+use App\Actions\DisplayPdfContent;
+use App\Actions\ListPdfDocuments;
+use App\Actions\CheckPdfStatus;
+use App\Actions\ProcessPdfDocument;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
         CrawlAi::class,
         CrawlWebsite::class,
         ExtractPdfText::class,
+        DisplayPdfContent::class,
+        ListPdfDocuments::class,
+        CheckPdfStatus::class,
+        ProcessPdfDocument::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
