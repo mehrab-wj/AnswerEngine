@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use App\Services\VectorDatabase;
+use Illuminate\Support\Facades\Log;
 
 class PdfDocument extends Model
 {
@@ -69,6 +71,16 @@ class PdfDocument extends Model
             // Clean up the file when the model is deleted
             if ($model->storage_path && Storage::exists($model->storage_path)) {
                 Storage::delete($model->storage_path);
+            }
+            
+            // Delete vectors when PdfDocument is deleted
+            if ($model->uuid && $model->user_id) {
+                try {
+                    $vectorDb = VectorDatabase::make();
+                    $vectorDb->deleteVectorsByUrl($model->uuid, $model->user_id);
+                } catch (\Exception $e) {
+                    Log::error("Failed to delete vectors for PdfDocument {$model->id}: " . $e->getMessage());
+                }
             }
         });
     }
@@ -164,7 +176,7 @@ class PdfDocument extends Model
     /**
      * Mark the document as failed.
      */
-    public function markAsFailed(string $errorMessage = null): void
+    public function markAsFailed(?string $errorMessage = null): void
     {
         $this->update([
             'status' => 'failed',
@@ -267,5 +279,28 @@ class PdfDocument extends Model
     public static function findByUuidOrFail(string $uuid): self
     {
         return static::where('uuid', $uuid)->firstOrFail();
+    }
+
+    /**
+     * Get the content type (always 'pdf' for PDF documents)
+     */
+    public function getContentTypeAttribute(): string
+    {
+        return 'pdf';
+    }
+
+    /**
+     * Convert to expected item format for consistency with ScrapeResult
+     */
+    public function toExpectedItemFormat(): array
+    {
+        return [
+            'title' => $this->document_title ?? $this->original_filename,
+            'content' => $this->markdown_text ?? $this->extracted_text,
+            'content_type' => $this->content_type,
+            'source_url' => '', // PDFs don't have source URLs
+            'filename' => $this->original_filename,
+            'user_id' => (string) $this->user_id,
+        ];
     }
 } 

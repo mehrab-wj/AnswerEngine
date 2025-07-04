@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\ExtractPdfText;
+use App\Jobs\SyncPdfToVectorDbJob;
 use App\Models\PdfDocument;
 use App\Services\PdfTextExtractor\Exceptions\PdfExtractionException;
 use Illuminate\Bus\Queueable;
@@ -113,6 +114,9 @@ class ProcessPdfDocumentJob implements ShouldQueue
                 'text_length' => strlen($result['text']),
                 'pages' => $result['metadata']['pages'] ?? 0,
             ]);
+
+            // Dispatch vector processing job
+            SyncPdfToVectorDbJob::dispatch($this->pdfDocument->id, $this->pdfDocument->user_id);
 
         } catch (PdfExtractionException $e) {
             $this->handleFailure($e, $startTime);
