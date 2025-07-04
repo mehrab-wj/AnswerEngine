@@ -5,6 +5,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Actions\CrawlLinks;
 use App\Actions\CrawlAi;
 use App\Actions\CrawlWebsite;
+use App\Actions\ExtractPdfText;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         CrawlLinks::class,
         CrawlAi::class,
         CrawlWebsite::class,
+        ExtractPdfText::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
