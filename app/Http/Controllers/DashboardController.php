@@ -337,13 +337,15 @@ class DashboardController extends Controller
             $context .= "Content: {$doc['content']}\n\n";
         }
 
-        $prompt = "Based on the following context from the user's knowledge base, please provide a helpful and accurate answer to their question.\n\n";
-        $prompt .= "Context:\n{$context}\n";
+        $prompt = "Based on the following context from the user's knowledge base, please provide a helpful and accurate answer to user question.\n\n";
+        $prompt .= "If the answer of the question is not in the context, please say so. Don't make up an answer.\n";
+        $prompt .= "Please add refrences to the context in the answers you make.\n";
+        $prompt .= "<context>\n{$context}\n</context>";
 
         try {
             $client = OpenRouter::make();
             $response = $client->chat()->create([
-                'model' => 'anthropic/claude-3.5-sonnet',
+                'model' => 'openai/gpt-4o-mini',
                 'messages' => [
                     ['role' => 'system', 'content' => $prompt],
                     ['role' => 'user', 'content' => $query]
