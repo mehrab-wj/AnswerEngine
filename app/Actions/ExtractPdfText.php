@@ -104,6 +104,14 @@ class ExtractPdfText
                 $command->info("\nMetadata:");
                 foreach ($result['metadata'] as $key => $value) {
                     if ($value !== null && $value !== '') {
+                        // Skip arrays or convert them to readable format
+                        if (is_array($value)) {
+                            if ($key === 'raw_details') {
+                                // Skip raw details as they're too verbose
+                                continue;
+                            }
+                            $value = implode(', ', $value);
+                        }
                         $command->line("  {$key}: {$value}");
                     }
                 }

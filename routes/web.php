@@ -2,14 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Actions\ChunkMarkdown;
-use App\Actions\CrawlAi;
+use App\Services\PdfTextExtractor\PdfTextExtractor;
+use App\Actions\ConvertTextToMarkdown;
 
 Route::get('/test', function () {
-    $response = CrawlAi::make()->handle('https://shreycation.substack.com/');
-    $markdown = $response->rawMarkdown();
-    $chunks = ChunkMarkdown::make()->handle($markdown);
-    dd($chunks);
+    $extractor = new PdfTextExtractor();
+    // Extract text and metadata
+    $text = $extractor->extract(public_path('interview-book.pdf'));
+    $metadata = $extractor->extractMetadata(public_path('interview-book.pdf'));
+    $markdown = ConvertTextToMarkdown::make()->handle($text);
+
+    echo "<pre> " . $markdown . "</pre>";
 });
 
 Route::get('/', function () {
@@ -22,5 +25,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';
