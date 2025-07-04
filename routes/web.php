@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Services\PdfTextExtractor\PdfTextExtractor;
 use App\Actions\ConvertTextToMarkdown;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/test', function () {
     $extractor = new PdfTextExtractor();
@@ -20,9 +21,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
 require __DIR__ . '/settings.php';

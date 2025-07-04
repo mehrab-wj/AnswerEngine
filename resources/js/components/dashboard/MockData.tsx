@@ -10,7 +10,7 @@ export interface ProcessingItem {
   type: 'pdf' | 'website';
   name: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  vectorSync: 'pending' | 'synced' | 'failed';
+  vectorSync: 'pending' | "processing" | 'completed' | 'failed';
   createdAt: string;
   size?: string;
   pages?: number;
@@ -45,7 +45,7 @@ export const mockProcessingData: ProcessingItem[] = [
     type: 'pdf',
     name: 'interview-guide.pdf',
     status: 'completed',
-    vectorSync: 'synced',
+    vectorSync: 'completed',
     createdAt: '2024-01-15',
     size: '2.4 MB',
     pages: 45,
@@ -66,7 +66,7 @@ export const mockProcessingData: ProcessingItem[] = [
     type: 'pdf',
     name: 'technical-specifications.pdf',
     status: 'completed',
-    vectorSync: 'synced',
+    vectorSync: 'completed',
     createdAt: '2024-01-14',
     size: '8.7 MB',
     pages: 120,
@@ -98,7 +98,7 @@ export const mockProcessingData: ProcessingItem[] = [
     type: 'website',
     name: 'https://support.example.com',
     status: 'completed',
-    vectorSync: 'synced',
+    vectorSync: 'completed',
     createdAt: '2024-01-13',
     pages: 8,
     processingTime: '23s'

@@ -5,7 +5,12 @@ import { StatCards } from '@/components/dashboard/StatCards';
 import { SearchInterface } from '@/components/dashboard/SearchInterface';
 import { AddSourcesSection } from '@/components/dashboard/AddSourcesSection';
 import { ProcessingTable } from '@/components/dashboard/ProcessingTable';
-import { mockStats, mockProcessingData } from '@/components/dashboard/MockData';
+import { type StatData, type ProcessingItem } from '@/components/dashboard/MockData';
+
+interface DashboardProps {
+    stats: StatData;
+    processingData: ProcessingItem[];
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -14,13 +19,13 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard() {
+export default function Dashboard({ stats, processingData }: DashboardProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-6 p-4 overflow-x-auto">
                 {/* Stats Cards */}
-                <StatCards stats={mockStats} />
+                <StatCards stats={stats} />
 
                 {/* Search Interface */}
                 <SearchInterface />
@@ -29,7 +34,7 @@ export default function Dashboard() {
                 <AddSourcesSection />
 
                 {/* Processing Table */}
-                <ProcessingTable data={mockProcessingData} />
+                <ProcessingTable data={processingData} />
             </div>
         </AppLayout>
     );
