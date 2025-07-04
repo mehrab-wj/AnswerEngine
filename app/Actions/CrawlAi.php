@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Lorisleiva\Actions\Concerns\AsAction;
+use Illuminate\Support\Str;
 
 class CrawlAi
 {
@@ -163,12 +164,59 @@ class CrawlAi
     /** Internal links array */
     public function internalLinks(): array
     {
-        return $this->result['links']['internal'] ?? [];
+        $links = collect($this->result['links']['internal'] ?? [])
+            ->map(function ($link) {
+                return [
+                    'href' => $this->cleanUrl($link['href']),
+                    'text' => $link['text'] ?? $link['href'],
+                    'title' => $link['title'] ?? $link['href'],
+                ];
+            })
+            ->unique('href') // Remove duplicates based on href
+            ->values() // Re-index the array
+            ->toArray();
+
+        return $links;
     }
 
     /** External links array */
     public function externalLinks(): array
     {
-        return $this->result['links']['external'] ?? [];
+        $links = collect($this->result['links']['external'] ?? [])
+            ->map(function ($link) {
+                return [
+                    'href' => $this->cleanUrl($link['href']),
+                    'text' => $link['text'] ?? $link['href'],
+                    'title' => $link['title'] ?? $link['href'],
+                ];
+            })
+            ->unique('href') // Remove duplicates based on href
+            ->values() // Re-index the array
+            ->toArray();
+
+        return $links;
+    }
+
+    /** 
+     * Clean URL by removing fragments, query strings, and trailing slashes 
+     */
+    protected function cleanUrl(string $url): string
+    {
+        // Remove fragments (everything after "#")
+        $hashPos = strpos($url, '#');
+        if ($hashPos !== false) {
+            $url = substr($url, 0, $hashPos);
+        }
+
+        // Remove query strings (everything after "?")
+        $queryPos = strpos($url, '?');
+        if ($queryPos !== false) {
+            $url = substr($url, 0, $queryPos);
+        }
+
+        // Remove trailing slashes
+        $url = rtrim($url, '/');
+
+        return $url;
     }
 }
