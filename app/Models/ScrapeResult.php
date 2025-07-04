@@ -77,11 +77,11 @@ class ScrapeResult extends Model
     public function toExpectedItemFormat(): array
     {
         return [
-            'title' => $this->title,
+            'title' => $this->title ?: 'Untitled',
             'content' => $this->content,
             'content_type' => $this->content_type,
             'source_url' => $this->source_url,
-            'author' => $this->author,
+            'author' => $this->author ?: '',
             'user_id' => (string) $this->user_id,
         ];
     }

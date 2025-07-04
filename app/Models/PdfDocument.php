@@ -296,11 +296,12 @@ class PdfDocument extends Model
     public function toExpectedItemFormat(): array
     {
         return [
-            'title' => $this->document_title ?? $this->original_filename,
-            'content' => $this->markdown_text ?? $this->extracted_text,
+            'title' => $this->document_title ?: $this->original_filename,
+            'content' => $this->markdown_text ?: $this->extracted_text,
             'content_type' => $this->content_type,
             'source_url' => '', // PDFs don't have source URLs
             'filename' => $this->original_filename,
+            'author' => '', // PDFs don't have authors in our current implementation
             'user_id' => (string) $this->user_id,
         ];
     }

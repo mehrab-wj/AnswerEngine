@@ -6,13 +6,13 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\PdfDocument;
 use App\Models\ScrapeProcess;
+use App\Models\ScrapeResult;
 use App\Actions\CrawlWebsite;
 use App\Actions\ProcessPdfDocument;
 use Illuminate\Support\Facades\Auth;
 use App\Services\OpenAIEmbedding;
 use App\Services\VectorDatabase;
 use App\Services\OpenRouter;
-use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -220,9 +220,6 @@ class DashboardController extends Controller
         $userId = Auth::id();
         $query = $request->input('query');
 
-        // Debug logging
-        Log::info('Search initiated', ['userId' => $userId, 'query' => $query]);
-
         try {
             // 1. Embed the query
             $embedding = OpenAIEmbedding::make()->embed($query);
@@ -233,31 +230,24 @@ class DashboardController extends Controller
 
             // 2. Query vectors in Pinecone
             $vectorResults = VectorDatabase::make()->queryVectors($embedding, 5, $userId);
-            Log::info('Vector search results', ['vectorResults' => $vectorResults]);
             
             // 3. Format source documents
             $sourceDocuments = $this->formatSourceDocuments($vectorResults);
-            Log::info('Formatted source documents', ['sourceDocuments' => $sourceDocuments]);
             
             // 4. Generate AI answer
             $aiAnswer = $this->generateAiAnswer($query, $sourceDocuments);
-            Log::info('Generated AI answer', ['aiAnswer' => $aiAnswer]);
             
             // 5. Calculate processing time
             $processingTime = round(microtime(true) - $startTime, 2);
 
             // 6. Return search results
-            $searchResult = [
-                'query' => $query,
-                'aiAnswer' => $aiAnswer,
-                'sourceDocuments' => $sourceDocuments,
-                'processingTime' => $processingTime
-            ];
-            
-            Log::info('Search completed', ['searchResult' => $searchResult]);
-            
             return redirect()->back()->with([
-                'searchResult' => $searchResult
+                'searchResult' => [
+                    'query' => $query,
+                    'aiAnswer' => $aiAnswer,
+                    'sourceDocuments' => $sourceDocuments,
+                    'processingTime' => $processingTime
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -271,19 +261,59 @@ class DashboardController extends Controller
     private function formatSourceDocuments(array $vectorResults): array
     {
         $sourceDocuments = [];
+        $processedDocuments = []; // Track processed documents to avoid duplicates
         
         if (isset($vectorResults['matches'])) {
             foreach ($vectorResults['matches'] as $match) {
                 $metadata = $match['metadata'] ?? [];
+                $similarity = $match['score'] ?? 0;
                 
-                $sourceDocuments[] = [
-                    'title' => $metadata['title'] ?? 'Unknown Document',
-                    'content' => $metadata['content'] ?? 'No content available',
-                    'source' => $metadata['source'] ?? $metadata['url'] ?? 'Unknown Source',
-                    'similarity' => $match['score'] ?? 0
-                ];
+                // Determine document type and ID
+                $documentType = $metadata['type'] ?? 'Unknown';
+                $documentId = null;
+                
+                if ($documentType === 'Website' && isset($metadata['scrape_result_id'])) {
+                    $documentId = $metadata['scrape_result_id'];
+                    $key = "website_{$documentId}";
+                    
+                    // Skip if already processed, but keep highest similarity
+                    if (isset($processedDocuments[$key]) && $processedDocuments[$key]['similarity'] >= $similarity) {
+                        continue;
+                    }
+                    
+                    // Get full document from database
+                    $document = ScrapeResult::find($documentId);
+                    if ($document) {
+                        $formattedDoc = $document->toExpectedItemFormat();
+                        $formattedDoc['similarity'] = $similarity;
+                        $sourceDocuments[] = $formattedDoc;
+                        $processedDocuments[$key] = $formattedDoc;
+                    }
+                } elseif ($documentType === 'PDF' && isset($metadata['pdf_document_id'])) {
+                    $documentId = $metadata['pdf_document_id'];
+                    $key = "pdf_{$documentId}";
+                    
+                    // Skip if already processed, but keep highest similarity
+                    if (isset($processedDocuments[$key]) && $processedDocuments[$key]['similarity'] >= $similarity) {
+                        continue;
+                    }
+                    
+                    // Get full document from database
+                    $document = PdfDocument::find($documentId);
+                    if ($document) {
+                        $formattedDoc = $document->toExpectedItemFormat();
+                        $formattedDoc['similarity'] = $similarity;
+                        $sourceDocuments[] = $formattedDoc;
+                        $processedDocuments[$key] = $formattedDoc;
+                    }
+                }
             }
         }
+        
+        // Sort by similarity descending and return unique documents
+        usort($sourceDocuments, function($a, $b) {
+            return $b['similarity'] <=> $a['similarity'];
+        });
         
         return $sourceDocuments;
     }
@@ -300,21 +330,23 @@ class DashboardController extends Controller
         // Build context from source documents
         $context = '';
         foreach ($sourceDocuments as $doc) {
-            $context .= "Source: {$doc['source']}\n";
+            $source = $doc['content_type'] === 'pdf' 
+                ? ($doc['filename'] ?? 'Unknown PDF') 
+                : ($doc['source_url'] ?? 'Unknown Website');
+            $context .= "Source: {$source}\n";
             $context .= "Content: {$doc['content']}\n\n";
         }
 
         $prompt = "Based on the following context from the user's knowledge base, please provide a helpful and accurate answer to their question.\n\n";
         $prompt .= "Context:\n{$context}\n";
-        $prompt .= "Question: {$query}\n\n";
-        $prompt .= "Answer:";
 
         try {
             $client = OpenRouter::make();
             $response = $client->chat()->create([
                 'model' => 'anthropic/claude-3.5-sonnet',
                 'messages' => [
-                    ['role' => 'user', 'content' => $prompt]
+                    ['role' => 'system', 'content' => $prompt],
+                    ['role' => 'user', 'content' => $query]
                 ],
                 'max_tokens' => 500,
                 'temperature' => 0.7

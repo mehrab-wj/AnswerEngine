@@ -17,7 +17,11 @@ interface DashboardProps {
         sourceDocuments: Array<{
             title: string;
             content: string;
-            source: string;
+            content_type: string;
+            source_url?: string;
+            filename?: string;
+            author?: string;
+            user_id: string;
             similarity: number;
         }>;
         processingTime: number;
@@ -33,9 +37,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard({ stats, processingData, searchResult }: DashboardProps) {
     // usePoll(2000);
-
-    // Debug: Check if searchResult is received
-    console.log('Dashboard component searchResult:', searchResult);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
