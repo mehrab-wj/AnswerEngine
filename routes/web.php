@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('dashboard/add-website', [DashboardController::class, 'addWebsite'])->name('dashboard.add-website');
     Route::post('dashboard/upload-pdf', [DashboardController::class, 'uploadPdf'])->name('dashboard.upload-pdf');
+    Route::post('dashboard/search', [DashboardController::class, 'search'])->name('dashboard.search');
     Route::delete('dashboard/source', [DashboardController::class, 'deleteSource'])->name('dashboard.delete-source');
     
     // Process detail routes

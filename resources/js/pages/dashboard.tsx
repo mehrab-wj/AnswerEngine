@@ -6,11 +6,22 @@ import { SearchInterface } from '@/components/dashboard/SearchInterface';
 import { StatCards } from '@/components/dashboard/StatCards';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, usePoll } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 
 interface DashboardProps {
     stats: StatData;
     processingData: ProcessingItem[];
+    searchResult?: {
+        query: string;
+        aiAnswer: string;
+        sourceDocuments: Array<{
+            title: string;
+            content: string;
+            source: string;
+            similarity: number;
+        }>;
+        processingTime: number;
+    };
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -20,8 +31,11 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Dashboard({ stats, processingData }: DashboardProps) {
-    usePoll(2000);
+export default function Dashboard({ stats, processingData, searchResult }: DashboardProps) {
+    // usePoll(2000);
+
+    // Debug: Check if searchResult is received
+    console.log('Dashboard component searchResult:', searchResult);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -34,7 +48,7 @@ export default function Dashboard({ stats, processingData }: DashboardProps) {
                 <StatCards stats={stats} />
 
                 {/* Search Interface */}
-                <SearchInterface />
+                <SearchInterface searchResult={searchResult} />
 
                 {/* Add Sources Section */}
                 <AddSourcesSection />

@@ -1,34 +1,51 @@
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/icon';
 import { Search, X, Bot, Code2, Clock } from 'lucide-react';
-import { type SearchResult, sampleSearchResults } from './MockData';
+import { useForm } from '@inertiajs/react';
 
-export function SearchInterface() {
-  const [query, setQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+interface SearchResult {
+  query: string;
+  aiAnswer: string;
+  sourceDocuments: Array<{
+    title: string;
+    content: string;
+    source: string;
+    similarity: number;
+  }>;
+  processingTime: number;
+}
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
+interface SearchInterfaceProps {
+  searchResult?: SearchResult;
+}
 
-    setIsSearching(true);
-    
-    // Simulate API call with mock data
-    setTimeout(() => {
-      const randomResult = sampleSearchResults[Math.floor(Math.random() * sampleSearchResults.length)];
-      setSearchResult({
-        ...randomResult,
-        query: query.trim()
-      });
-      setIsSearching(false);
-    }, 1500);
+export function SearchInterface({ searchResult }: SearchInterfaceProps) {
+  const form = useForm({
+    query: ''
+  });
+
+  // Debug: Log search results
+  console.log('SearchInterface searchResult:', searchResult);
+
+  const handleSearch = () => {
+    if (!form.data.query.trim()) return;
+
+    console.log('Submitting search with query:', form.data.query);
+
+    form.post('/dashboard/search', {
+      onSuccess: (response) => {
+        console.log('ON SUCCESS EVENT:', response);
+        console.log('Search submitted successfully');
+      },
+      onError: (errors) => {
+        console.log('Search submission errors:', errors);
+      }
+    });
   };
 
   const handleClear = () => {
-    setQuery('');
-    setSearchResult(null);
+    form.setData('query', '');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -50,14 +67,14 @@ export function SearchInterface() {
         <div className="space-y-3">
           <div className="relative">
             <textarea
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={form.data.query}
+              onChange={(e) => form.setData('query', e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask a question about your documents... (Ctrl+Enter to search)"
               className="w-full min-h-[100px] max-h-[200px] p-3 border border-input bg-background rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-              disabled={isSearching}
+              disabled={form.processing}
             />
-            {query && (
+            {form.data.query && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -69,13 +86,19 @@ export function SearchInterface() {
             )}
           </div>
           
+          {form.errors.query && (
+            <div className="text-sm text-red-600 dark:text-red-400">
+              {form.errors.query}
+            </div>
+          )}
+          
           <div className="flex gap-2">
             <Button
               onClick={handleSearch}
-              disabled={!query.trim() || isSearching}
+              disabled={!form.data.query.trim() || form.processing}
               className="flex-1 sm:flex-none"
             >
-              {isSearching ? (
+              {form.processing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                   Searching...
@@ -90,12 +113,20 @@ export function SearchInterface() {
             <Button
               variant="outline"
               onClick={handleClear}
-              disabled={!query && !searchResult}
+              disabled={!form.data.query && !searchResult}
             >
               Clear
             </Button>
           </div>
         </div>
+
+        {/* Debug Section */}
+        {searchResult && (
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h4 className="font-medium text-yellow-800 mb-2">Debug Info:</h4>
+            <p className="text-sm text-yellow-700">Search Result Received: {JSON.stringify(searchResult, null, 2)}</p>
+          </div>
+        )}
 
         {/* Results */}
         {searchResult && (
@@ -125,17 +156,17 @@ export function SearchInterface() {
                 </CardContent>
               </Card>
 
-              {/* JSON Results Panel */}
+              {/* Source Documents Panel */}
               <Card className="bg-gray-50/50 dark:bg-gray-950/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Icon iconNode={Code2} className="h-5 w-5 text-gray-600" />
-                    Source Documents ({searchResult.jsonResults.length})
+                    Source Documents ({searchResult.sourceDocuments.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {searchResult.jsonResults.map((result, index) => (
+                    {searchResult.sourceDocuments.map((result, index) => (
                       <div key={index} className="p-3 bg-white dark:bg-gray-900 rounded-lg border text-sm">
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h4 className="font-medium text-foreground">{result.title}</h4>
@@ -159,7 +190,7 @@ export function SearchInterface() {
                       View Raw JSON
                     </summary>
                     <pre className="mt-2 p-3 bg-muted rounded-lg text-xs overflow-x-auto">
-                      {JSON.stringify(searchResult.jsonResults, null, 2)}
+                      {JSON.stringify(searchResult.sourceDocuments, null, 2)}
                     </pre>
                   </details>
                 </CardContent>

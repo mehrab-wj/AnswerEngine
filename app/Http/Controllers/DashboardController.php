@@ -9,10 +9,14 @@ use App\Models\ScrapeProcess;
 use App\Actions\CrawlWebsite;
 use App\Actions\ProcessPdfDocument;
 use Illuminate\Support\Facades\Auth;
+use App\Services\OpenAIEmbedding;
+use App\Services\VectorDatabase;
+use App\Services\OpenRouter;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $userId = Auth::id();
 
@@ -22,9 +26,12 @@ class DashboardController extends Controller
         // Fetch processing data
         $processingData = $this->getProcessingData($userId);
 
+        $searchResult = $request->session()->get('searchResult');
+
         return Inertia::render('dashboard', [
             'stats' => $stats,
             'processingData' => $processingData,
+            'searchResult' => $searchResult,
         ]);
     }
 
@@ -197,6 +204,125 @@ class DashboardController extends Controller
             }
         } catch (\Exception $e) {
             return to_route('dashboard')->with('error', 'An error occurred while deleting the source: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Search the knowledge base using AI embeddings
+     */
+    public function search(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string|max:1000'
+        ]);
+
+        $startTime = microtime(true);
+        $userId = Auth::id();
+        $query = $request->input('query');
+
+        // Debug logging
+        Log::info('Search initiated', ['userId' => $userId, 'query' => $query]);
+
+        try {
+            // 1. Embed the query
+            $embedding = OpenAIEmbedding::make()->embed($query);
+            
+            if (!$embedding) {
+                return back()->withErrors(['query' => 'Failed to process your query. Please try again.']);
+            }
+
+            // 2. Query vectors in Pinecone
+            $vectorResults = VectorDatabase::make()->queryVectors($embedding, 5, $userId);
+            Log::info('Vector search results', ['vectorResults' => $vectorResults]);
+            
+            // 3. Format source documents
+            $sourceDocuments = $this->formatSourceDocuments($vectorResults);
+            Log::info('Formatted source documents', ['sourceDocuments' => $sourceDocuments]);
+            
+            // 4. Generate AI answer
+            $aiAnswer = $this->generateAiAnswer($query, $sourceDocuments);
+            Log::info('Generated AI answer', ['aiAnswer' => $aiAnswer]);
+            
+            // 5. Calculate processing time
+            $processingTime = round(microtime(true) - $startTime, 2);
+
+            // 6. Return search results
+            $searchResult = [
+                'query' => $query,
+                'aiAnswer' => $aiAnswer,
+                'sourceDocuments' => $sourceDocuments,
+                'processingTime' => $processingTime
+            ];
+            
+            Log::info('Search completed', ['searchResult' => $searchResult]);
+            
+            return redirect()->back()->with([
+                'searchResult' => $searchResult
+            ]);
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['query' => 'An error occurred while searching: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Format vector search results into source documents
+     */
+    private function formatSourceDocuments(array $vectorResults): array
+    {
+        $sourceDocuments = [];
+        
+        if (isset($vectorResults['matches'])) {
+            foreach ($vectorResults['matches'] as $match) {
+                $metadata = $match['metadata'] ?? [];
+                
+                $sourceDocuments[] = [
+                    'title' => $metadata['title'] ?? 'Unknown Document',
+                    'content' => $metadata['content'] ?? 'No content available',
+                    'source' => $metadata['source'] ?? $metadata['url'] ?? 'Unknown Source',
+                    'similarity' => $match['score'] ?? 0
+                ];
+            }
+        }
+        
+        return $sourceDocuments;
+    }
+
+    /**
+     * Generate AI answer using retrieved context
+     */
+    private function generateAiAnswer(string $query, array $sourceDocuments): string
+    {
+        if (empty($sourceDocuments)) {
+            return "I couldn't find any relevant information in your knowledge base to answer this question.";
+        }
+
+        // Build context from source documents
+        $context = '';
+        foreach ($sourceDocuments as $doc) {
+            $context .= "Source: {$doc['source']}\n";
+            $context .= "Content: {$doc['content']}\n\n";
+        }
+
+        $prompt = "Based on the following context from the user's knowledge base, please provide a helpful and accurate answer to their question.\n\n";
+        $prompt .= "Context:\n{$context}\n";
+        $prompt .= "Question: {$query}\n\n";
+        $prompt .= "Answer:";
+
+        try {
+            $client = OpenRouter::make();
+            $response = $client->chat()->create([
+                'model' => 'anthropic/claude-3.5-sonnet',
+                'messages' => [
+                    ['role' => 'user', 'content' => $prompt]
+                ],
+                'max_tokens' => 500,
+                'temperature' => 0.7
+            ]);
+
+            return trim($response->choices[0]->message->content);
+        } catch (\Exception $e) {
+            return "I found relevant information but couldn't generate an answer at this time. Please check the source documents below.";
         }
     }
 }
