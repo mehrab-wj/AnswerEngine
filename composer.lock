@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6c061c01881b169f0da27c3fa8780823",
+    "content-hash": "29df389466ec2c79a4a77a1c39c31e12",
     "packages": [
         {
             "name": "brick/math",
@@ -3026,20 +3026,20 @@
         },
         {
             "name": "probots-io/pinecone-php",
-            "version": "1.1.0",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/probots-io/pinecone-php.git",
-                "reference": "de505b0a3bb95f8c4657f923f8b8288a7fabfeb9"
+                "reference": "3266290398ef2edaf3b4c567b436b8324fc9c78e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/probots-io/pinecone-php/zipball/de505b0a3bb95f8c4657f923f8b8288a7fabfeb9",
-                "reference": "de505b0a3bb95f8c4657f923f8b8288a7fabfeb9",
+                "url": "https://api.github.com/repos/probots-io/pinecone-php/zipball/3266290398ef2edaf3b4c567b436b8324fc9c78e",
+                "reference": "3266290398ef2edaf3b4c567b436b8324fc9c78e",
                 "shasum": ""
             },
             "require": {
-                "php": "^8.3",
+                "php": "^8.2",
                 "saloonphp/saloon": "^3.6"
             },
             "require-dev": {
@@ -3078,9 +3078,9 @@
             ],
             "support": {
                 "issues": "https://github.com/probots-io/pinecone-php/issues",
-                "source": "https://github.com/probots-io/pinecone-php/tree/1.1.0"
+                "source": "https://github.com/probots-io/pinecone-php/tree/1.0.2"
             },
-            "time": "2025-01-08T08:46:35+00:00"
+            "time": "2024-02-21T16:14:53+00:00"
         },
         {
             "name": "psr/clock",
