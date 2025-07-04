@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Services\PdfTextExtractor\PdfTextExtractor;
 use App\Actions\ConvertTextToMarkdown;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProcessDetailsController;
 
 Route::get('/phpinfo', function () {
     return [
@@ -26,6 +27,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('dashboard/add-website', [DashboardController::class, 'addWebsite'])->name('dashboard.add-website');
     Route::post('dashboard/upload-pdf', [DashboardController::class, 'uploadPdf'])->name('dashboard.upload-pdf');
     Route::delete('dashboard/source', [DashboardController::class, 'deleteSource'])->name('dashboard.delete-source');
+    
+    // Process detail routes
+    Route::get('process/website/{uuid}', [ProcessDetailsController::class, 'showWebsiteProcess'])->name('process.website');
+    Route::get('process/pdf/{uuid}', [ProcessDetailsController::class, 'showPdfProcess'])->name('process.pdf');
 });
 
 require __DIR__ . '/settings.php';

@@ -7,6 +7,7 @@ export interface StatData {
 
 export interface ProcessingItem {
   id: number;
+  uuid: string;
   type: 'pdf' | 'website';
   name: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -42,6 +43,7 @@ export const mockStats: StatData = {
 export const mockProcessingData: ProcessingItem[] = [
   {
     id: 1,
+    uuid: '550e8400-e29b-41d4-a716-446655440001',
     type: 'pdf',
     name: 'interview-guide.pdf',
     status: 'completed',
@@ -53,6 +55,7 @@ export const mockProcessingData: ProcessingItem[] = [
   },
   {
     id: 2,
+    uuid: '550e8400-e29b-41d4-a716-446655440002',
     type: 'website',
     name: 'https://docs.example.com',
     status: 'processing',
@@ -63,6 +66,7 @@ export const mockProcessingData: ProcessingItem[] = [
   },
   {
     id: 3,
+    uuid: '550e8400-e29b-41d4-a716-446655440003',
     type: 'pdf',
     name: 'technical-specifications.pdf',
     status: 'completed',
@@ -74,6 +78,7 @@ export const mockProcessingData: ProcessingItem[] = [
   },
   {
     id: 4,
+    uuid: '550e8400-e29b-41d4-a716-446655440004',
     type: 'website',
     name: 'https://blog.example.com',
     status: 'failed',
@@ -84,6 +89,7 @@ export const mockProcessingData: ProcessingItem[] = [
   },
   {
     id: 5,
+    uuid: '550e8400-e29b-41d4-a716-446655440005',
     type: 'pdf',
     name: 'user-manual.pdf',
     status: 'pending',
@@ -95,6 +101,7 @@ export const mockProcessingData: ProcessingItem[] = [
   },
   {
     id: 6,
+    uuid: '550e8400-e29b-41d4-a716-446655440006',
     type: 'website',
     name: 'https://support.example.com',
     status: 'completed',

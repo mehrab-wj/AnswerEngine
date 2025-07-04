@@ -208,14 +208,11 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0"
-                                                onClick={() => console.log('View details:', item.id)}
-                                            >
-                                                <Icon iconNode={Eye} className="h-4 w-4" />
-                                            </Button>
+                                            <a href={`/process/${item.type}/${item.uuid}`}>
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                    <Icon iconNode={Eye} className="h-4 w-4" />
+                                                </Button>
+                                            </a>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"

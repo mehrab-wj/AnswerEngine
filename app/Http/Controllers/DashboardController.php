@@ -58,7 +58,7 @@ class DashboardController extends Controller
             'processing' => ($pdfCounts['processing'] ?? 0) +
                 ($scrapeCounts['processing'] ?? 0),
             'vectorSynced' => $vectorSyncedPdfs + $completedScrapes,
-            'totalQueries' => 156, // Placeholder - can be implemented later
+            'totalQueries' => 0,
         ];
     }
 
@@ -71,6 +71,7 @@ class DashboardController extends Controller
             ->map(function ($pdf) {
                 return [
                     'id' => $pdf->id,
+                    'uuid' => $pdf->uuid,
                     'type' => 'pdf',
                     'name' => $pdf->original_filename,
                     'status' => $pdf->status,
@@ -90,6 +91,7 @@ class DashboardController extends Controller
             ->map(function ($scrape) {
                 return [
                     'id' => $scrape->id,
+                    'uuid' => $scrape->uuid,
                     'type' => 'website',
                     'name' => $scrape->url,
                     'status' => $scrape->status,
