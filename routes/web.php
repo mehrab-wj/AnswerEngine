@@ -22,6 +22,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('dashboard/add-website', [DashboardController::class, 'addWebsite'])->name('dashboard.add-website');
     Route::delete('dashboard/source', [DashboardController::class, 'deleteSource'])->name('dashboard.delete-source');
 });
 

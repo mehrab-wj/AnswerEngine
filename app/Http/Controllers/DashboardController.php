@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\PdfDocument;
 use App\Models\ScrapeProcess;
+use App\Actions\CrawlWebsite;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -105,6 +106,29 @@ class DashboardController extends Controller
             ->sortByDesc('createdAt')
             ->values()
             ->toArray();
+    }
+
+    /**
+     * Add a new website to crawl
+     */
+    public function addWebsite(Request $request)
+    {
+        $request->validate([
+            'url' => 'required|url|max:255',
+            'depth' => 'required|integer|min:1|max:4'
+        ]);
+
+        $userId = Auth::id();
+        $url = $request->input('url');
+        $depth = $request->input('depth');
+
+        try {
+            $scrapeProcess = CrawlWebsite::make()->handle($url, $depth, $userId);
+            
+            return to_route('dashboard')->with('success', 'Website crawling started successfully!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['url' => 'An error occurred while starting the crawl: ' . $e->getMessage()]);
+        }
     }
 
     /**
