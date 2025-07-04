@@ -31,7 +31,7 @@ const rightNavItems: NavItem[] = [
     },
     {
         title: 'How to use',
-        href: '/how-to-use',
+        href: '/',
         icon: BookOpen,
     },
 ];
