@@ -14,11 +14,15 @@ class ScrapeResult extends Model
         'source_url',
         'author',
         'user_id',
+        'internal_links',
+        'external_links',
     ];
 
     protected $casts = [
         'scrape_process_id' => 'integer',
         'user_id' => 'integer',
+        'internal_links' => 'array',
+        'external_links' => 'array',
     ];
 
     /**

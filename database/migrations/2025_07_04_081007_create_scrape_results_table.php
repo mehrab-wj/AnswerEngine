@@ -19,6 +19,8 @@ return new class extends Migration
             $table->longText('content');
             $table->string('source_url')->nullable();
             $table->string('author')->nullable();
+            $table->json('internal_links')->nullable();
+            $table->json('external_links')->nullable();
             $table->timestamps();
             
             // Indexes for performance
