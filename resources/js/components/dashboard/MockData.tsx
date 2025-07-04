@@ -10,7 +10,7 @@ export interface ProcessingItem {
   type: 'pdf' | 'website';
   name: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  vectorSync: 'pending' | "processing" | 'completed' | 'failed';
+  vectorSync: 'pending' | 'processing' | 'synced' | 'completed' | 'failed';
   createdAt: string;
   size?: string;
   pages?: number;

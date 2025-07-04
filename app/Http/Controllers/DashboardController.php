@@ -13,19 +13,19 @@ class DashboardController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        
+
         // Fetch statistics
         $stats = $this->getStats($userId);
-        
+
         // Fetch processing data
         $processingData = $this->getProcessingData($userId);
-        
+
         return Inertia::render('dashboard', [
             'stats' => $stats,
             'processingData' => $processingData,
         ]);
     }
-    
+
     private function getStats(int $userId): array
     {
         // Count PDFs by status
@@ -34,32 +34,32 @@ class DashboardController extends Controller
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
-            
+
         // Count ScrapeProcesses by status
         $scrapeCounts = ScrapeProcess::where('user_id', $userId)
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
-            
+
         // Count vector synced PDFs
         $vectorSyncedPdfs = PdfDocument::where('user_id', $userId)
-            ->where('vector_sync_status', 'synced')
+            ->where('vector_sync_status', 'completed')
             ->count();
-            
+
         // Count completed scrapes (consider them as synced)
         $completedScrapes = $scrapeCounts['completed'] ?? 0;
-        
+
         return [
-            'totalDocs' => PdfDocument::where('user_id', $userId)->count() + 
-                          ScrapeProcess::where('user_id', $userId)->count(),
-            'processing' => ($pdfCounts['processing'] ?? 0) + 
-                           ($scrapeCounts['processing'] ?? 0),
+            'totalDocs' => PdfDocument::where('user_id', $userId)->count() +
+                ScrapeProcess::where('user_id', $userId)->count(),
+            'processing' => ($pdfCounts['processing'] ?? 0) +
+                ($scrapeCounts['processing'] ?? 0),
             'vectorSynced' => $vectorSyncedPdfs + $completedScrapes,
             'totalQueries' => 156, // Placeholder - can be implemented later
         ];
     }
-    
+
     private function getProcessingData(int $userId): array
     {
         // Fetch PDF documents
@@ -79,7 +79,7 @@ class DashboardController extends Controller
                     'processingTime' => $pdf->formatted_processing_time,
                 ];
             });
-            
+
         // Fetch scrape processes
         $scrapeData = ScrapeProcess::where('user_id', $userId)
             ->with('scrapeResults')
@@ -91,20 +91,64 @@ class DashboardController extends Controller
                     'type' => 'website',
                     'name' => $scrape->url,
                     'status' => $scrape->status,
-                    'vectorSync' => $scrape->status === 'completed' ? 'completed' : 
-                                  ($scrape->status === 'failed' ? 'failed' : 'pending'),
+                    'vectorSync' => $scrape->status === 'completed' ? 'completed' : ($scrape->status === 'failed' ? 'failed' : 'pending'),
                     'createdAt' => $scrape->created_at->format('Y-m-d H:i:s'),
                     'pages' => $scrape->scrapeResults->count(),
-                    'processingTime' => $scrape->status === 'completed' ? 
-                                     $scrape->created_at->diffInSeconds($scrape->updated_at) . 's' : 
-                                     'N/A',
+                    'processingTime' => $scrape->status === 'completed' ?
+                        $scrape->created_at->diffInSeconds($scrape->updated_at) . 's' :
+                        'N/A',
                 ];
             });
-            
+
         // Combine and sort by creation date
         return $pdfData->concat($scrapeData)
             ->sortByDesc('createdAt')
             ->values()
             ->toArray();
+    }
+
+    /**
+     * Delete a source document (PDF or website)
+     */
+    public function deleteSource(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'type' => 'required|in:pdf,website'
+        ]);
+
+        $userId = Auth::id();
+        $id = $request->input('id');
+        $type = $request->input('type');
+
+        try {
+            if ($type === 'pdf') {
+                $document = PdfDocument::where('user_id', $userId)
+                    ->where('id', $id)
+                    ->first();
+
+                                if (!$document) {
+                    return to_route('dashboard')->with('error', 'PDF document not found or you do not have permission to delete it.');
+                }
+                
+                $document->delete();
+                
+                return to_route('dashboard')->with('success', 'PDF document deleted successfully.');
+            } else if ($type === 'website') {
+                $scrapeProcess = ScrapeProcess::where('user_id', $userId)
+                    ->where('id', $id)
+                    ->first();
+
+                                if (!$scrapeProcess) {
+                    return to_route('dashboard')->with('error', 'Website scrape process not found or you do not have permission to delete it.');
+                }
+                
+                $scrapeProcess->delete();
+                
+                return to_route('dashboard')->with('success', 'Website scrape process deleted successfully.');
+            }
+        } catch (\Exception $e) {
+            return to_route('dashboard')->with('error', 'An error occurred while deleting the source: ' . $e->getMessage());
+        }
     }
 }

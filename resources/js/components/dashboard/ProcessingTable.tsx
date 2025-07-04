@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, Eye, FileText, Globe, HardDrive, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { type ProcessingItem } from './MockData';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { router } from '@inertiajs/react';
 
 interface ProcessingTableProps {
     data: ProcessingItem[];
@@ -14,6 +16,11 @@ type FilterType = 'all' | 'pdf' | 'website';
 
 export function ProcessingTable({ data }: ProcessingTableProps) {
     const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+    const [deleteDialog, setDeleteDialog] = useState<{
+        isOpen: boolean;
+        item: ProcessingItem | null;
+    }>({ isOpen: false, item: null });
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const filteredData = data.filter((item) => {
         if (activeFilter === 'all') return true;
@@ -49,6 +56,7 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
 
     const getVectorSyncBadge = (status: ProcessingItem['vectorSync']) => {
         switch (status) {
+            case 'synced':
             case 'completed':
                 return (
                     <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
@@ -91,6 +99,37 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
         { id: 'pdf', label: 'PDFs', count: data.filter((item) => item.type === 'pdf').length },
         { id: 'website', label: 'Websites', count: data.filter((item) => item.type === 'website').length },
     ];
+
+    const handleDeleteClick = (item: ProcessingItem) => {
+        setDeleteDialog({ isOpen: true, item });
+    };
+
+    const handleDeleteConfirm = (item: ProcessingItem) => {
+        setIsDeleting(true);
+        
+        router.delete('/dashboard/source', {
+            data: {
+                id: item.id,
+                type: item.type
+            },
+            onSuccess: () => {
+                setDeleteDialog({ isOpen: false, item: null });
+                setIsDeleting(false);
+                // Inertia will automatically refresh the page with new data and show flash messages
+            },
+            onError: () => {
+                setIsDeleting(false);
+                // Keep dialog open so user can retry
+            },
+            onFinish: () => {
+                setIsDeleting(false);
+            }
+        });
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialog({ isOpen: false, item: null });
+    };
 
     return (
         <Card>
@@ -181,7 +220,7 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                                                onClick={() => console.log('Delete:', item.id)}
+                                                onClick={() => handleDeleteClick(item)}
                                             >
                                                 <Icon iconNode={Trash2} className="h-4 w-4" />
                                             </Button>
@@ -199,6 +238,14 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
                     )}
                 </div>
             </CardContent>
+            
+            <DeleteConfirmDialog
+                item={deleteDialog.item}
+                isOpen={deleteDialog.isOpen}
+                onClose={handleDeleteCancel}
+                onConfirm={handleDeleteConfirm}
+                isDeleting={isDeleting}
+            />
         </Card>
     );
 }
