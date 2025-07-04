@@ -6,14 +6,15 @@ use App\Services\PdfTextExtractor\PdfTextExtractor;
 use App\Actions\ConvertTextToMarkdown;
 use App\Http\Controllers\DashboardController;
 
-Route::get('/test', function () {
-    $extractor = new PdfTextExtractor();
-    // Extract text and metadata
-    $text = $extractor->extract(public_path('interview-book.pdf'));
-    $metadata = $extractor->extractMetadata(public_path('interview-book.pdf'));
-    $markdown = ConvertTextToMarkdown::make()->handle($text);
-
-    echo "<pre> " . $markdown . "</pre>";
+Route::get('/phpinfo', function () {
+    return [
+        'upload_max_filesize' => ini_get('upload_max_filesize'),
+        'post_max_size' => ini_get('post_max_size'),
+        'max_file_uploads' => ini_get('max_file_uploads'),
+        'memory_limit' => ini_get('memory_limit'),
+        'max_execution_time' => ini_get('max_execution_time'),
+        'max_input_time' => ini_get('max_input_time'),
+    ];
 });
 
 Route::get('/', function () {
@@ -23,6 +24,7 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('dashboard/add-website', [DashboardController::class, 'addWebsite'])->name('dashboard.add-website');
+    Route::post('dashboard/upload-pdf', [DashboardController::class, 'uploadPdf'])->name('dashboard.upload-pdf');
     Route::delete('dashboard/source', [DashboardController::class, 'deleteSource'])->name('dashboard.delete-source');
 });
 

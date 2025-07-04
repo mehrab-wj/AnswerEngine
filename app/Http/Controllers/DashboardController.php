@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Models\PdfDocument;
 use App\Models\ScrapeProcess;
 use App\Actions\CrawlWebsite;
+use App\Actions\ProcessPdfDocument;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -128,6 +129,27 @@ class DashboardController extends Controller
             return to_route('dashboard')->with('success', 'Website crawling started successfully!');
         } catch (\Exception $e) {
             return back()->withErrors(['url' => 'An error occurred while starting the crawl: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Upload and process a PDF document
+     */
+    public function uploadPdf(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:51200' // 50MB max
+        ]);
+
+        $userId = Auth::id();
+        $file = $request->file('file');
+
+        try {
+            ProcessPdfDocument::make()->fromUploadedFile($file, $userId);
+            
+            return to_route('dashboard')->with('success', 'PDF uploaded successfully and processing started!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['file' => 'An error occurred while processing the PDF: ' . $e->getMessage()]);
         }
     }
 

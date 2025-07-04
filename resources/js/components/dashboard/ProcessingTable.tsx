@@ -2,11 +2,11 @@ import { Icon } from '@/components/icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { router } from '@inertiajs/react';
 import { Calendar, Clock, Eye, FileText, Globe, HardDrive, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { type ProcessingItem } from './MockData';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
-import { router } from '@inertiajs/react';
+import { type ProcessingItem } from './MockData';
 
 interface ProcessingTableProps {
     data: ProcessingItem[];
@@ -106,11 +106,11 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
 
     const handleDeleteConfirm = (item: ProcessingItem) => {
         setIsDeleting(true);
-        
+
         router.delete('/dashboard/source', {
             data: {
                 id: item.id,
-                type: item.type
+                type: item.type,
             },
             onSuccess: () => {
                 setDeleteDialog({ isOpen: false, item: null });
@@ -123,7 +123,7 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
             },
             onFinish: () => {
                 setIsDeleting(false);
-            }
+            },
         });
     };
 
@@ -166,7 +166,7 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
                         </thead>
                         <tbody>
                             {filteredData.map((item) => (
-                                <tr key={item.id} className="border-b hover:bg-muted/50">
+                                <tr key={`${item.type}-${item.id}`} className="border-b hover:bg-muted/50">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             <Icon iconNode={getTypeIcon(item.type)} className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -238,7 +238,7 @@ export function ProcessingTable({ data }: ProcessingTableProps) {
                     )}
                 </div>
             </CardContent>
-            
+
             <DeleteConfirmDialog
                 item={deleteDialog.item}
                 isOpen={deleteDialog.isOpen}

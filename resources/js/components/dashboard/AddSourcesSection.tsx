@@ -5,15 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link, Plus, Upload, X } from 'lucide-react';
 import { useState } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 export function AddSourcesSection() {
+    const { errors } = usePage().props;
     const [websiteUrl, setWebsiteUrl] = useState('');
     const [isUrlValid, setIsUrlValid] = useState(true);
     const [crawlDepth, setCrawlDepth] = useState('2'); // Default to "surface"
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [dragActive, setDragActive] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     const validateUrl = (url: string): boolean => {
         try {
@@ -92,9 +94,20 @@ export function AddSourcesSection() {
 
     const handleUploadPdf = () => {
         if (selectedFile) {
-            console.log('Uploading PDF:', selectedFile.name);
-            // Here you would dispatch the action to upload the PDF
-            setSelectedFile(null);
+            setIsUploading(true);
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            router.post(route('dashboard.upload-pdf'), formData, {
+                onSuccess: () => {
+                    setSelectedFile(null);
+                    setIsUploading(false);
+                },
+                onError: () => {
+                    setIsUploading(false);
+                }
+            });
         }
     };
 
@@ -120,9 +133,10 @@ export function AddSourcesSection() {
                                 placeholder="https://example.com"
                                 value={websiteUrl}
                                 onChange={handleUrlChange}
-                                className={!isUrlValid ? 'border-red-500' : ''}
+                                className={!isUrlValid || errors.url ? 'border-red-500' : ''}
                             />
                             {!isUrlValid && <p className="text-sm text-red-500">Please enter a valid URL</p>}
+                            {errors.url && <p className="text-sm text-red-500">{errors.url}</p>}
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Crawl Depth</label>
@@ -137,6 +151,7 @@ export function AddSourcesSection() {
                                     <SelectItem value="4">Super deep</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {errors.depth && <p className="text-sm text-red-500">{errors.depth}</p>}
                         </div>
                         <Button onClick={handleAddWebsite} disabled={!websiteUrl.trim() || !isUrlValid || isSubmitting} className="w-full">
                             <Icon iconNode={Plus} className="mr-2 h-4 w-4" />
@@ -158,7 +173,9 @@ export function AddSourcesSection() {
                     <CardContent className="space-y-4">
                         <div
                             className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
-                                dragActive ? 'border-primary bg-primary/10' : 'border-gray-300 dark:border-gray-700'
+                                dragActive ? 'border-primary bg-primary/10' : 
+                                errors.file ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : 
+                                'border-gray-300 dark:border-gray-700'
                             }`}
                             onDragEnter={handleDrag}
                             onDragLeave={handleDrag}
@@ -189,9 +206,10 @@ export function AddSourcesSection() {
                                 </div>
                             )}
                         </div>
-                        <Button onClick={handleUploadPdf} disabled={!selectedFile} className="w-full">
+                        {errors.file && <p className="text-sm text-red-500">{errors.file}</p>}
+                        <Button onClick={handleUploadPdf} disabled={!selectedFile || isUploading} className="w-full">
                             <Icon iconNode={Upload} className="mr-2 h-4 w-4" />
-                            Upload PDF
+                            {isUploading ? 'Uploading PDF...' : 'Upload PDF'}
                         </Button>
                     </CardContent>
                 </Card>
