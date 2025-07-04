@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Services\VectorDatabase;
+use Illuminate\Support\Facades\Log;
 
 class ScrapeResult extends Model
 {
@@ -24,6 +26,26 @@ class ScrapeResult extends Model
         'internal_links' => 'array',
         'external_links' => 'array',
     ];
+
+    /**
+     * Boot the model and set up event listeners.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Delete vectors when ScrapeResult is deleted
+        static::deleting(function (ScrapeResult $scrapeResult) {
+            if ($scrapeResult->source_url && $scrapeResult->user_id) {
+                try {
+                    $vectorDb = VectorDatabase::make();
+                    $vectorDb->deleteVectorsByUrl($scrapeResult->source_url, $scrapeResult->user_id);
+                } catch (\Exception $e) {
+                    Log::error("Failed to delete vectors for ScrapeResult {$scrapeResult->id}: " . $e->getMessage());
+                }
+            }
+        });
+    }
 
     /**
      * Get the scrape process that owns this result

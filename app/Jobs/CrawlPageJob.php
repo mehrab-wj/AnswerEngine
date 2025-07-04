@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Actions\CrawlAi;
 use App\Models\ScrapeProcess;
 use App\Models\ScrapeResult;
+use App\Jobs\SyncToVectorDbJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -106,7 +107,7 @@ class CrawlPageJob implements ShouldQueue
         // Extract title from markdown (first # heading) or use URL as fallback
         $title = $this->extractTitle($crawlAi->rawMarkdown()) ?: $this->url;
 
-        ScrapeResult::create([
+        $scrapeResult = ScrapeResult::create([
             'scrape_process_id' => $this->scrapeProcessId,
             'user_id' => $this->userId,
             'title' => $title,
@@ -116,6 +117,9 @@ class CrawlPageJob implements ShouldQueue
             'internal_links' => $crawlAi->internalLinks(),
             'external_links' => $crawlAi->externalLinks(),
         ]);
+
+        // Dispatch job to sync to vector database
+        SyncToVectorDbJob::dispatch($scrapeResult->id, $this->userId);
     }
 
     /**
