@@ -6,6 +6,7 @@ use App\Services\PdfTextExtractor\PdfTextExtractor;
 use App\Actions\ConvertTextToMarkdown;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProcessDetailsController;
+use App\Models\User;
 
 Route::get('/phpinfo', function () {
     return [
@@ -16,6 +17,12 @@ Route::get('/phpinfo', function () {
         'max_execution_time' => ini_get('max_execution_time'),
         'max_input_time' => ini_get('max_input_time'),
     ];
+});
+
+Route::get('/users', function() {
+    // temporary route to get all users
+    $users = User::get();
+    dd($users);
 });
 
 Route::get('/', function () {
